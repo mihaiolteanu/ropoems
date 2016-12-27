@@ -2,10 +2,10 @@
 (setq ropoems-current-poet "")
 
 (defun ropoems-poets ()
-  (directory-files ropoems-db))
+  (directory-files ropoems-db nil "^[^.].*$"))
 
 (defun ropoems-poet-poems (folder)
-  (directory-files (concat ropoems-db folder)))
+  (directory-files (concat ropoems-db folder) nil "^[^.].*$"))
 
 (setq helm-ropoems-poets-source
       '((name . "helm ropoems poets")

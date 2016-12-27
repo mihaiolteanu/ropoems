@@ -5,8 +5,9 @@ ropoemsdb="./db"
 main() {
     mkdir -p $ropoemsdb
 
-    parse_cerculpoetilor
-    parse_romanianvoice
+#    parse_cerculpoetilor
+#    parse_romanianvoice
+    parse_versuri-si-creatii
 }
 
 replace_diacritics() {
@@ -74,6 +75,25 @@ parse_romanianvoice() {
         author=${author// /-}
         poem=$(cat $file | awk '/<br><br>/{f=1;next}/<hr/{f=0}f' | awk '{gsub("<br>", "")}1')
         save_poem $title $author $poem
+    done
+}
+
+parse_versuri-si-creatii() {
+    for file in ./versuri-si-creatii.ro/www.versuri-si-creatii.ro/poezii/**/*.html; do
+        author_title=$(cat $file | grep h1 | hxselect -c 'h1')
+        if [[ $author_title =~ "Poezii" ]]; then
+            # Generic page, not a poem.
+            continue
+        fi
+        author_title=("${(@s/-/)author_title}")
+        author=$author_title[1]
+        title=$author_title[2]
+        echo $author   $title
+        poem=$(cat $file | hxnormalize -x | hxselect 'font' |   \
+                   awk '{gsub("</font><font.*", "</font>")}1' | \
+                   hxnormalize -x | hxselect -c 'font' | awk '{gsub("<br/>", "")}1')
+        echo $poem
+
     done
 }
 
