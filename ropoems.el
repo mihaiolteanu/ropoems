@@ -1,6 +1,9 @@
 (setq ropoems-db "~/projects/ropoems/db/")
 (setq ropoems-current-poet "")
 
+;; helm-search from a list of poets. After the poet is selected,
+;; helm-search from a list of his poems. The selected poem then opens
+;; in a new buffer.
 (defun ropoems-poets ()
   (directory-files ropoems-db nil "^[^.].*$"))
 
@@ -28,20 +31,10 @@
   (interactive)
   (helm :sources '(helm-ropoems-poets-source)))
 
-(defun ropoems-search-poems ()
-  (interactive)
-  (helm-do-ag ropoems-db))
-
-(progn
-  (define-prefix-command 'ropoems-prefix-map)
-  (define-key 'ropoems-prefix-map (kbd "p") 'ropoems-list-poets)
-  (define-key 'ropoems-prefix-map (kbd "s") 'ropoems-search-poems)
-  )
-
-(global-set-key (kbd "C-c P") ropoems-prefix-map)
-
-
-
+;; helm-search for poem contents using helm-ag. (hint: use -g to
+;; search for poem/author name) Some of the code is taken from the
+;; official helm-ag.el file. The selected poem then opens in a new
+;; buffer.
 (defun helm-ropoems--action-open-poem (candidate)
   (let* ((poem-author-name (car (split-string candidate ":")))
          (poem-name (replace-regexp-in-string "-" " "
@@ -80,4 +73,10 @@
   (let* ((helm-ag--default-directory ropoems-db))
     (helm :sources helm-source-ropoems)))
 
+;; Keybindings
+(progn
+  (define-prefix-command 'ropoems-prefix-map)
+  (define-key 'ropoems-prefix-map (kbd "p") 'ropoems-list-poets)
+  (define-key 'ropoems-prefix-map (kbd "s") 'ropoems-search-poems))
 
+(global-set-key (kbd "C-c P") ropoems-prefix-map)
