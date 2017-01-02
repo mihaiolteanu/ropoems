@@ -41,3 +41,43 @@
 (global-set-key (kbd "C-c P") ropoems-prefix-map)
 
 
+
+(defun helm-ropoems--action-open-poem (candidate)
+  (let* ((poem-author-name (car (split-string candidate ":")))
+         (poem-name (replace-regexp-in-string "-" " "
+                                              (cadr (split-string poem-author-name "/"))))
+         (author (replace-regexp-in-string "-" " "
+                                           (car (split-string poem-author-name "/"))))
+         (poem-buffer (get-buffer-create (format "%s - %s" author poem-name))))
+    (with-current-buffer poem-buffer
+      (put-text-property 0 (length poem-name) 'face 'info-title-2 poem-name)
+      (insert poem-name)
+      (newline)
+      (put-text-property 0 (length poem-name) 'face 'italic author)
+      (insert author)
+      (newline)
+      (insert-file-contents (concat ropoems-db poem-author-name))
+      (newline))
+    (switch-to-buffer poem-buffer)))
+
+(defvar helm-ropoems--actions
+  (helm-make-actions
+   "Open file" #'helm-ropoems--action-open-poem))
+
+(defvar helm-source-ropoems
+  (helm-build-async-source "Ropoems"
+    :init 'helm-ag--do-ag-set-command
+    :candidates-process 'helm-ag--do-ag-candidate-process
+    :persistent-action  'helm-ag--persistent-action
+    :action helm-ropoems--actions
+    :nohighlight t
+    :requires-pattern 3
+    :candidate-number-limit 9999
+    :follow (and helm-follow-mode-persistent 1)))
+
+(defun ropoems-search-poems ()
+  (interactive)
+  (let* ((helm-ag--default-directory ropoems-db))
+    (helm :sources helm-source-ropoems)))
+
+
