@@ -34,10 +34,10 @@
 
 (progn
   (define-prefix-command 'ropoems-prefix-map)
-  (define-key 'ropoems-prefix-map (kbd "<f6>") 'ropoems-list-poets)
-  (define-key 'ropoems-prefix-map (kbd "<f7>") 'ropoems-search-poems)
+  (define-key 'ropoems-prefix-map (kbd "p") 'ropoems-list-poets)
+  (define-key 'ropoems-prefix-map (kbd "s") 'ropoems-search-poems)
   )
 
-(global-set-key (kbd "<f9>") ropoems-prefix-map)
+(global-set-key (kbd "C-c P") ropoems-prefix-map)
 
 
