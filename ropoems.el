@@ -43,14 +43,14 @@
                                            (car (split-string poem-author-name "/"))))
          (poem-buffer (get-buffer-create (format "%s - %s" author poem-name))))
     (with-current-buffer poem-buffer
-      (put-text-property 0 (length poem-name) 'face 'info-title-2 poem-name)
+      (put-text-property 0 (length poem-name) 'face 'info-title-3 poem-name)
       (insert poem-name)
       (newline)
-      (put-text-property 0 (length poem-name) 'face 'italic author)
+      (put-text-property 0 (length author) 'face 'italic author)
       (insert author)
       (newline)
-      (insert-file-contents (concat ropoems-db poem-author-name))
-      (newline))
+      (newline)
+      (insert-file-contents (concat ropoems-db poem-author-name)))
     (switch-to-buffer poem-buffer)))
 
 (defvar helm-ropoems--actions
@@ -61,7 +61,7 @@
   (helm-build-async-source "Ropoems"
     :init 'helm-ag--do-ag-set-command
     :candidates-process 'helm-ag--do-ag-candidate-process
-    :persistent-action  'helm-ag--persistent-action
+    :persistent-action  'helm-ropoems--action-open-poem
     :action helm-ropoems--actions
     :nohighlight t
     :requires-pattern 3
@@ -69,6 +69,7 @@
     :follow (and helm-follow-mode-persistent 1)))
 
 (defun ropoems-search-poems ()
+  "Interactively search for romanian poems using the helm-ag"
   (interactive)
   (let* ((helm-ag--default-directory ropoems-db))
     (helm :sources helm-source-ropoems)))
