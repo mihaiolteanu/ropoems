@@ -50,7 +50,8 @@
       (insert author)
       (newline)
       (newline)
-      (insert-file-contents (concat ropoems-db poem-author-name)))
+      (insert-file-contents (concat ropoems-db poem-author-name))
+      (ropoems-mode))
     (switch-to-buffer poem-buffer)))
 
 (defvar helm-ropoems--actions
@@ -73,6 +74,15 @@
   (interactive)
   (let* ((helm-ag--default-directory ropoems-db))
     (helm :sources helm-source-ropoems)))
+
+;; ropoems major mode - used to navigate the buffer
+(define-derived-mode ropoems-mode special-mode "ropoems"
+  "Major mode for viewing and browsing romanian poems"
+  (setq buffer-read-only t))
+
+(define-key ropoems-mode-map (kbd "q") 'kill-this-buffer)
+(define-key ropoems-mode-map (kbd "n") 'next-line)
+(define-key ropoems-mode-map (kbd "p") 'previous-line)
 
 ;; Keybindings
 (progn
