@@ -2,7 +2,6 @@
 
 ;; Copyright (C) 2016-2017 Mihai Olteanu
 
-
 ;; Author: Mihai Olteanu <mihai_olteanu@fastmail.fm>
 ;; Created: 2017
 
@@ -14,24 +13,31 @@
 (setq ropoems-db "~/projects/ropoems/db/")
 (setq ropoems-current-poet "")
 
-(defun get-string-from-file (file-path)
+(defun get--string-from-file (file-path)
   "Return file-path's file content."
   (with-temp-buffer
     (insert-file-contents file-path)
     (buffer-string)))
 
-;; helm-search from a list of poets. After the poet is selected,
-;; helm-search from a list of his poems. The selected poem then opens
-;; in a new buffer.
-(defun ropoems-poets ()
-  (directory-files ropoems-db nil "^[^.].*$"))
+(defun ropoems--get-poem-path (poem author)
+  "Get the absolute path of the poem."
+  (concat (file-name-as-directory (concat ropoems-db author)) poem))
 
-(defun ropoems-poet-poems (folder)
-  (directory-files (concat ropoems-db folder) nil "^[^.].*$"))
+(defun ropoems--get-poem-verse (poem author)
+  "Get the actual poem verses"
+  (get--string-from-file (ropoems--get-poem-path poem author)))
+
+(defun ropoems--get-poets ()
+  "Get a list of all the poets in the database"
+  (directory-files ropoems-db nil "^[^.].*$")) ;Ignore . and .. folders
+
+(defun ropoems--get-poet-poems (poet)
+  "Get a list of all the poems for the given poet"
+  (directory-files (concat ropoems-db poet) nil "^[^.].*$"))
 
 (setq helm-ropoems-poets-source
       '((name . "helm ropoems poets")
-        (candidates . ropoems-poets)
+        (candidates . ropoems--get-poets)
         (action . (lambda (candidate)
                     (setq ropoems-current-poet candidate)
                     (helm :sources '(helm-ropoems-poet-poems-source))))))
@@ -39,14 +45,15 @@
 (setq helm-ropoems-poet-poems-source
       '((name . "helm ropoems poet poems")
         (candidates . (lambda ()
-                        (ropoems-poet-poems ropoems-current-poet)))
+                        (ropoems--get-poet-poems ropoems-current-poet)))
         (action . (lambda (poem)
-                    (let ((verse (get-string-from-file (concat (file-name-as-directory
-                                                                (concat ropoems-db ropoems-current-poet))
-                                                               poem))))
-                      (ropoems--open-poem poem ropoems-current-poet verse))))))
+                    (ropoems--open-poem
+                     poem
+                     ropoems-current-poet
+                     (ropoems--get-poem-verse poem ropoems-current-poet))))))
 
 (defun ropoems-list-poets ()
+  "Interactively select a poet and list all its poems"
   (interactive)
   (helm :sources '(helm-ropoems-poets-source)))
 
@@ -54,9 +61,9 @@
   "Open a new buffer, if one does not already exist, with the
   given poem and author in ropoems mode. The verse is inserted
   into the new buffer."
-  (let ((buffer-name (format "%s - %s" author poem)))
-    (if (not (get-buffer buffer-name))  ;Do nothing if the poem is already open.
-        (with-current-buffer (get-buffer-create buffer-name)
+  (let ((ropoems-buffer (format "%s - %s" author poem)))
+    (if (not (get-buffer ropoems-buffer))  ;Do nothing if the poem is already open.
+        (with-current-buffer (get-buffer-create ropoems-buffer)
           (put-text-property 0 (length poem) 'face 'info-title-3 poem)
           (insert poem)
           (newline)
@@ -65,33 +72,33 @@
           (newline)
           (newline)
           (insert verse)
-          (setq-local buffer-poem poem)
-          (setq-local buffer-author author)
           (ropoems-mode)
+          (make-local-variable 'ropoems-poem)
+          (setq ropoems-poem poem)
+          (make-local-variable 'ropoems-author)
+          (setq ropoems-author author)
           (beginning-of-buffer)))
-    (switch-to-buffer buffer-name)))
+    (switch-to-buffer ropoems-buffer)))
 
-(defun get-string-from-file (filePath)
-  "Return filePath's file content."
-  (with-temp-buffer
-    (insert-file-contents filePath)
-    (buffer-string)))
+(defun ropoems-author-message ()
+  (interactive)
+  (insert (ropoems--get-poet-poems
+           (replace-regexp-in-string " " "-" ropoems-author))))
 
 ;; helm-search for poem contents using helm-ag. (hint: use -g to
 ;; search for poem/author name) Some of the code is taken from the
 ;; official helm-ag.el file. The selected poem then opens in a new
 ;; buffer.
 (defun ropoems--open-poem-from-search (candidate)
+  "Open a poem in a ropoems buffer as an action of a poem search."
   (let* ((poem-author (car (split-string candidate ":")))
-         (poem (replace-regexp-in-string "-" " "
-                                         (cadr (split-string poem-author "/"))))
-         (author (replace-regexp-in-string "-" " "
-                                           (car (split-string poem-author "/"))))
-         (verse (with-temp-buffer
-                  (insert-file-contents (concat ropoems-db poem-author))
-                  (buffer-string))))
-    (ropoems--open-poem poem author verse)
-    (switch-to-buffer poem-buffer)))
+         (poem (cadr (split-string poem-author "/")))
+         (author (car (split-string poem-author "/")))
+         (verse (ropoems--get-poem-verse poem author)))
+    (ropoems--open-poem
+     (replace-regexp-in-string "-" " " poem)
+     (replace-regexp-in-string "-" " " author)
+     verse)))
 
 (defvar helm-ropoems--actions
   (helm-make-actions
