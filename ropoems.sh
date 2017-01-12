@@ -73,7 +73,9 @@ parse_romanianvoice() {
             author=$(cat $file | grep "\+2" | hxselect -ci 'font')
         fi
         author=${author// /-}
-        poem=$(cat $file | awk '/<br><br>/{f=1;next}/<hr/{f=0}f' | awk '{gsub("<br>", "")}1')
+        # remove all lines starting with html tag, remove remaining br tags,
+        # remove duplicate empty lines
+        poem=$(cat $file | sed -e '/^</d' | sed 's/<br>//g' | sed '/^$/N;/^\n$/D')
         save_poem $title $author $poem
     done
 }
